@@ -24,6 +24,16 @@ return {
 
     telescope.setup({
       defaults = {
+        file_ignore_patterns = {
+          "node_modules",
+          ".git",
+          ".yarn",
+          ".husky",
+          "yarn.lock",
+          "e2e",
+          "%.spec.ts",
+          "%.spec.js",
+        },
         path_display = { "smart" },
         mappings = {
           i = {
@@ -35,8 +45,15 @@ return {
         },
       },
       pickers = {
+        live_grep = {
+          additional_args = { "--hidden" },
+        },
+        grep_string = {
+          additional_args = { "--hidden" },
+        },
         find_files = {
-          theme = "dropdown",
+          -- theme = "dropdown",
+          hidden = true,
         },
       },
     })
