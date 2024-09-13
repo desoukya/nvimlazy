@@ -2,9 +2,9 @@ vim.g.mapleader = ","
 -- code folding
 vim.o.foldmethod = "indent"
 vim.o.foldcolumn = "1"
-vim.o.foldlevel = "20"
-vim.o.foldnestmax = "1"
-vim.o.foldlevelstart = "20"
+vim.o.foldlevel = 20
+vim.o.foldnestmax = 1
+vim.o.foldlevelstart = 20
 
 local keymap = vim.keymap -- for conciseness
 
@@ -60,6 +60,9 @@ keymap.set("n", "<leader>b", ":NvimTreeToggle<CR>") -- toggle file explorer
 keymap.set("n", "<leader>gc", "<cmd>Telescope git_commits<cr>") -- list all git commits (use <cr> to checkout) ["gc" for git commits]
 keymap.set("n", "<leader>gfc", "<cmd>Telescope git_bcommits<cr>") -- list git commits for current file/buffer (use <cr> to checkout) ["gfc" for git file commits]
 keymap.set("n", "<leader>gbr", "<cmd>Telescope git_branches<cr>") -- list git branches (use <cr> to checkout) ["gb" for git branch]
+
+-- git blame
+keymap.set("n", "<leader>gb", ":GitBlameToggle<CR>")
 
 -- sort
 keymap.set("v", "<leader>sl", ":Sort u<CR>") -- order lines

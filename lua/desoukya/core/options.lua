@@ -1,5 +1,9 @@
 vim.cmd("let g:netrw_liststyle = 3")
 
+-- git blame
+vim.cmd("let g:gitblame_display_virtual_text = 1")
+-- vim.cmd("let g:gitblame_delay = 1000")
+
 local opt = vim.opt
 
 opt.relativenumber = true
