@@ -21,6 +21,14 @@ return {
       },
       -- ui = { enable = false },
     },
+    -- mappings = {
+    --   ["gf"] = {
+    --     action = function()
+    --       return require("obsidian").util.gf_passthrough()
+    --     end,
+    --     opts = { noremap = false, expr = true, buffer = true },
+    --   },
+    -- },
   },
   -- pretty markdown
   {
