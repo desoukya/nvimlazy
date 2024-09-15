@@ -11,12 +11,8 @@ return {
     opts = {
       workspaces = {
         {
-          name = "Personal",
-          path = "~/Documents/Vaults/Personal",
-        },
-        {
-          name = "Hilton",
-          path = "~/Documents/Vaults/Hilton",
+          name = "vault",
+          path = "~/dev/vault",
         },
       },
       -- ui = { enable = false },
