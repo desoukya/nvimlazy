@@ -49,6 +49,9 @@ keymap.set("n", "<leader>q", ":q!<CR>") -- close file
 keymap.set("n", "<leader>qa", ":qa!<CR>") -- close all
 keymap.set("n", "<leader>wa", ":wqa!<CR>") -- save and close all filles
 
+-- refresh file
+keymap.set("n", "<leader>e", ":e<CR>") -- refresh file
+
 ----------------------
 -- Plugin Keybinds
 ----------------------
