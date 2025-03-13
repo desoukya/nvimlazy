@@ -52,6 +52,9 @@ keymap.set("n", "<leader>wa", ":wqa!<CR>") -- save and close all filles
 -- refresh file
 keymap.set("n", "<leader>e", ":e<CR>") -- refresh file
 
+-- open temporary buffer to paste external code or json without saving
+keymap.set("n", "<leader>nb", ":enew | setlocal buftype=nofile bufhidden=hide noswapfile<CR>")
+
 ----------------------
 -- Plugin Keybinds
 ----------------------
