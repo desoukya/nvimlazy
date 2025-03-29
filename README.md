@@ -11,3 +11,8 @@
 ```
 ~/.local/share/nvim/lazy/telescope-fzf-native.nvim
 ```
+
+#### Avante
+
+- Install rust to avoid missing templates error: https://github.com/yetone/avante.nvim/issues/544
+- arch -arm64 brew install rust
