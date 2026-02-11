@@ -42,6 +42,7 @@ return {
         -- Buffer local mappings.
         -- See `:help vim.lsp.*` for documentation on any of the below functions
         local opts = { buffer = ev.buf, silent = true }
+        local telescope_ok, telescope_builtin = pcall(require, "telescope.builtin")
 
         -- set keybinds
         opts.desc = "Show LSP references"
@@ -51,13 +52,29 @@ return {
         keymap.set("n", "ge", vim.lsp.buf.declaration, opts) -- go to declaration
 
         opts.desc = "Show LSP definitions"
-        keymap.set("n", "gd", "<cmd>Lspsaga peek_definition<CR>", opts) -- show lsp definitions
+        keymap.set("n", "gd", vim.lsp.buf.definition, opts) -- jump to lsp definition
 
         opts.desc = "Show LSP Incoming calls"
-        keymap.set("n", "gc", "<cmd>Telescope lsp_incoming_calls<CR>", opts) -- show lsp type definitions
+        keymap.set("n", "gc", function()
+          if vim.lsp.buf.incoming_calls then
+            vim.lsp.buf.incoming_calls()
+            return
+          end
+          if telescope_ok and telescope_builtin.lsp_incoming_calls then
+            telescope_builtin.lsp_incoming_calls()
+            return
+          end
+          vim.notify("Incoming calls picker is unavailable", vim.log.levels.WARN)
+        end, opts) -- show incoming calls
 
         opts.desc = "Show Spelling Recommendations"
-        keymap.set("n", "gp", "<cmd>Telescope spell_suggest<CR>", opts) -- show lsp type definitions
+        keymap.set("n", "gp", function()
+          if telescope_ok and telescope_builtin.spell_suggest then
+            telescope_builtin.spell_suggest()
+            return
+          end
+          vim.cmd("normal! z=")
+        end, opts) -- show spelling suggestions
 
         opts.desc = "See available code actions"
         keymap.set("n", "<leader>ga", vim.lsp.buf.code_action, opts) -- see available code actions, in visual mode will apply to selection
