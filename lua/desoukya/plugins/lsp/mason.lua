@@ -13,6 +13,19 @@ return {
 
     local mason_tool_installer = require("mason-tool-installer")
 
+    local function resolve_typescript_server()
+      local ok, server_mappings = pcall(require, "mason-lspconfig.mappings.server")
+      if ok and server_mappings and server_mappings.lspconfig_to_package then
+        if server_mappings.lspconfig_to_package.ts_ls then
+          return "ts_ls"
+        end
+        if server_mappings.lspconfig_to_package.tsserver then
+          return "tsserver"
+        end
+      end
+      return "ts_ls"
+    end
+
     -- enable mason and configure icons
     mason.setup({
       ui = {
@@ -27,7 +40,7 @@ return {
     mason_lspconfig.setup({
       -- list of servers for mason to install
       ensure_installed = {
-        "tsserver",
+        resolve_typescript_server(),
         "html",
         "cssls",
         "tailwindcss",

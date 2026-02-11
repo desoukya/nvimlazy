@@ -43,16 +43,37 @@ return {
         -- See `:help vim.lsp.*` for documentation on any of the below functions
         local opts = { buffer = ev.buf, silent = true }
         local telescope_ok, telescope_builtin = pcall(require, "telescope.builtin")
+        local function supports_lsp_method(method)
+          for _, client in ipairs(vim.lsp.get_clients({ bufnr = ev.buf })) do
+            if client.supports_method(method) then
+              return true
+            end
+          end
+          return false
+        end
 
         -- set keybinds
         opts.desc = "Show LSP references"
-        keymap.set("n", "gf", "<cmd>Lspsaga finder<CR>", opts) -- show definition, references
+        keymap.set("n", "gf", function()
+          if supports_lsp_method("textDocument/definition") or supports_lsp_method("textDocument/references") then
+            vim.cmd("Lspsaga finder")
+            return
+          end
+          -- Keep Vim's native `gf` behavior when no LSP is available for this buffer.
+          vim.cmd("normal! gf")
+        end, opts) -- show definition, references
 
         opts.desc = "Go to declaration"
         keymap.set("n", "ge", vim.lsp.buf.declaration, opts) -- go to declaration
 
         opts.desc = "Show LSP definitions"
-        keymap.set("n", "gd", vim.lsp.buf.definition, opts) -- jump to lsp definition
+        keymap.set("n", "gd", function()
+          if supports_lsp_method("textDocument/definition") then
+            vim.lsp.buf.definition()
+            return
+          end
+          vim.notify("No LSP definition provider is attached to this buffer", vim.log.levels.WARN)
+        end, opts) -- jump to lsp definition
 
         opts.desc = "Show LSP Incoming calls"
         keymap.set("n", "gc", function()
