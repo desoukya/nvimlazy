@@ -8,6 +8,9 @@ return {
     { "folke/neodev.nvim", opts = {} },
   },
   config = function()
+    local has_native_lsp = (type(vim.lsp.config) == "function" or type(vim.lsp.config) == "table")
+      and type(vim.lsp.enable) == "function"
+
     -- import lspconfig plugin
     require("lspsaga").setup({
       -- keybinds for navigation in lspsaga window
@@ -25,11 +28,11 @@ return {
       },
     })
 
-    -- import lspconfig plugin
-    local lspconfig = require("lspconfig")
-
-    -- import mason_lspconfig plugin
-    local mason_lspconfig = require("mason-lspconfig")
+    local lspconfig = nil
+    if not has_native_lsp then
+      -- Fallback for older Neovim versions that don't support vim.lsp.config()/vim.lsp.enable().
+      lspconfig = require("lspconfig")
+    end
 
     -- import cmp-nvim-lsp plugin
     local cmp_nvim_lsp = require("cmp_nvim_lsp")
@@ -134,59 +137,135 @@ return {
       vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
     end
 
-    mason_lspconfig.setup_handlers({
-      -- default handler for installed servers
-      function(server_name)
-        lspconfig[server_name].setup({
-          capabilities = capabilities,
-        })
-      end,
-      ["svelte"] = function()
-        -- configure svelte server
-        lspconfig["svelte"].setup({
-          capabilities = capabilities,
-          on_attach = function(client, bufnr)
-            vim.api.nvim_create_autocmd("BufWritePost", {
-              pattern = { "*.js", "*.ts" },
-              callback = function(ctx)
-                -- Here use ctx.match instead of ctx.file
-                client.notify("$/onDidChangeTsOrJsFile", { uri = ctx.match })
-              end,
-            })
+    local function resolve_typescript_server()
+      if has_native_lsp then
+        if type(vim.lsp.config) == "table" and vim.lsp.config.ts_ls then
+          return "ts_ls"
+        end
+        -- On Neovim 0.11+ prefer ts_ls by default.
+        return "ts_ls"
+      else
+        local ok, lspconfig_configs = pcall(require, "lspconfig.configs")
+        if ok and lspconfig_configs and lspconfig_configs.ts_ls then
+          return "ts_ls"
+        end
+      end
+      return "tsserver"
+    end
+
+    local function setup_server(server_name, server_opts)
+      local merged_opts = vim.tbl_deep_extend("force", {
+        capabilities = capabilities,
+      }, server_opts or {})
+
+      if has_native_lsp then
+        vim.lsp.config(server_name, merged_opts)
+        vim.lsp.enable(server_name)
+        return
+      end
+
+      if not lspconfig[server_name] then
+        vim.notify(("LSP server '%s' is not available in nvim-lspconfig"):format(server_name), vim.log.levels.WARN)
+        return
+      end
+
+      lspconfig[server_name].setup(merged_opts)
+    end
+
+    local function resolve_dotnet_cmd()
+      local candidates = {
+        vim.fn.exepath("dotnet"),
+        "/usr/local/share/dotnet/dotnet",
+        "/usr/local/bin/dotnet",
+        "/opt/homebrew/bin/dotnet",
+      }
+
+      for _, cmd in ipairs(candidates) do
+        if cmd and cmd ~= "" and vim.fn.executable(cmd) == 1 then
+          return cmd
+        end
+      end
+
+      return "dotnet"
+    end
+
+    -- mason-lspconfig v2 removed setup_handlers(); configure servers directly for compatibility.
+    local common_servers = {
+      resolve_typescript_server(),
+      "html",
+      "cssls",
+      "tailwindcss",
+      "prismals",
+      "pyright",
+    }
+
+    for _, server_name in ipairs(common_servers) do
+      setup_server(server_name)
+    end
+
+    -- configure svelte server
+    setup_server("svelte", {
+      on_attach = function(client, bufnr)
+        vim.api.nvim_create_autocmd("BufWritePost", {
+          pattern = { "*.js", "*.ts" },
+          callback = function(ctx)
+            -- Here use ctx.match instead of ctx.file
+            client.notify("$/onDidChangeTsOrJsFile", { uri = ctx.match })
           end,
         })
       end,
-      ["graphql"] = function()
-        -- configure graphql language server
-        lspconfig["graphql"].setup({
-          capabilities = capabilities,
-          filetypes = { "graphql", "gql", "svelte", "typescriptreact", "javascriptreact" },
-        })
-      end,
-      ["emmet_ls"] = function()
-        -- configure emmet language server
-        lspconfig["emmet_ls"].setup({
-          capabilities = capabilities,
-          filetypes = { "html", "typescriptreact", "javascriptreact", "css", "sass", "scss", "less", "svelte" },
-        })
-      end,
-      ["lua_ls"] = function()
-        -- configure lua server (with special settings)
-        lspconfig["lua_ls"].setup({
-          capabilities = capabilities,
-          settings = {
-            Lua = {
-              -- make the language server recognize "vim" global
-              diagnostics = {
-                globals = { "vim" },
-              },
-              completion = {
-                callSnippet = "Replace",
-              },
-            },
+    })
+
+    -- configure graphql language server
+    setup_server("graphql", {
+      filetypes = { "graphql", "gql", "svelte", "typescriptreact", "javascriptreact" },
+    })
+
+    -- configure emmet language server
+    setup_server("emmet_ls", {
+      filetypes = { "html", "typescriptreact", "javascriptreact", "css", "sass", "scss", "less", "svelte" },
+    })
+
+    -- configure lua server (with special settings)
+    setup_server("lua_ls", {
+      settings = {
+        Lua = {
+          -- make the language server recognize "vim" global
+          diagnostics = {
+            globals = { "vim" },
           },
-        })
-      end,
+          completion = {
+            callSnippet = "Replace",
+          },
+        },
+      },
+    })
+
+    -- configure omnisharp with explicit dotnet resolution for GUI/limited PATH environments.
+    setup_server("omnisharp", {
+      cmd = {
+        resolve_dotnet_cmd(),
+        vim.fn.stdpath("data") .. "/mason/packages/omnisharp/libexec/OmniSharp.dll",
+        "-z",
+        "--hostPID",
+        tostring(vim.fn.getpid()),
+        "DotNet:enablePackageRestore=false",
+        "--encoding",
+        "utf-8",
+        "--languageserver",
+      },
+      capabilities = {
+        workspace = {
+          workspaceFolders = false,
+        },
+      },
+      settings = {
+        RoslynExtensionsOptions = {
+          EnableImportCompletion = true,
+          EnableAnalyzersSupport = true,
+          AnalyzeOpenDocumentsOnly = nil,
+        },
+      },
     })
   end,
 }
