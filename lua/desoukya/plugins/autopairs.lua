@@ -1,4 +1,14 @@
 return {
+  {
+    "windwp/nvim-ts-autotag",
+    event = { "BufReadPre", "BufNewFile" },
+    config = function()
+      require("nvim-ts-autotag").setup({
+        opts = { enable_close = true, enable_rename = true, enable_close_on_slash = false },
+      })
+    end,
+  },
+  {
   "windwp/nvim-autopairs",
   event = { "InsertEnter" },
   dependencies = {
@@ -27,5 +37,6 @@ return {
     -- make autopairs and completion work together
     cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
   end,
+  },
 }
 

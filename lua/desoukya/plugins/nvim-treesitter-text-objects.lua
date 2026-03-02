@@ -2,9 +2,13 @@ return {
   "nvim-treesitter/nvim-treesitter-textobjects",
   lazy = true,
   config = function()
+    local ok, compat = pcall(require, "nvim-treesitter.compat")
+    if ok and compat then
+      compat.flatten = function(t) return vim.iter(t):flatten(math.huge):totable() end
+    end
     require("nvim-treesitter.configs").setup({
       -- A list of parser names, or "all" (the listed parsers MUST always be installed)
-      ensure_installed = { "lua", "vim", "graphql", "markdown", "markdown_inline", "javascript", "typescript" },
+      ensure_installed = { "lua", "vim", "graphql", "markdown", "markdown_inline", "javascript", "typescript", "tsx", "html", "css" },
       highlight = {
         enable = true,
       },

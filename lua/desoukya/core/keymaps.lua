@@ -1,10 +1,10 @@
 vim.g.mapleader = ","
 -- code folding
-vim.o.foldmethod = "indent"
+vim.o.foldmethod = "expr"
+vim.o.foldexpr = "v:lua.vim.treesitter.foldexpr()"
 vim.o.foldcolumn = "1"
-vim.o.foldlevel = 20
-vim.o.foldnestmax = 1
-vim.o.foldlevelstart = 20
+vim.o.foldlevel = 99
+vim.o.foldlevelstart = 99
 
 local keymap = vim.keymap -- for conciseness
 
