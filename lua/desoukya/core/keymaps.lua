@@ -24,6 +24,18 @@ keymap.set("n", "<leader>nh", ":nohl<CR>")
 
 -- delete single character without copying into register
 keymap.set("n", "x", '"_x')
+keymap.set("n", "X", '"_X')
+
+-- don't let deletes/changes overwrite the unnamed register (and your clipboard)
+keymap.set({ "n", "x" }, "d", '"_d')
+keymap.set({ "n", "x" }, "c", '"_c')
+keymap.set("n", "D", '"_D')
+keymap.set("n", "C", '"_C')
+
+-- paste over a visual selection without clobbering the yank/clipboard
+-- (default `p` yanks the replaced text into the unnamed register)
+keymap.set("x", "p", '"_dP')
+keymap.set("x", "P", '"_dP')
 
 -- increment/decrement numbers
 keymap.set("n", "<leader>+", "<C-a>") -- increment
