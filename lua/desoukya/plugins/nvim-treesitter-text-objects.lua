@@ -1,6 +1,9 @@
 return {
-  "nvim-treesitter/nvim-treesitter-textobjects",
-  lazy = true,
+  "nvim-treesitter/nvim-treesitter",
+  build = ":TSUpdate",
+  dependencies = {
+    "nvim-treesitter/nvim-treesitter-textobjects",
+  },
   config = function()
     local ok, compat = pcall(require, "nvim-treesitter.compat")
     if ok and compat then
