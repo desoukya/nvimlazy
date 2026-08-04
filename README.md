@@ -31,6 +31,19 @@ In a Markdown buffer:
 1. Press `<leader>md` to open preview (`:Glow`).
 2. Press `q` or `<Esc>` to close the preview.
 
+## Mouse Selection (tmux + iTerm2)
+
+Running Neovim inside tmux with `set -g mouse on`, a plain click-drag is
+captured by tmux/Neovim, so it can't select text for the system clipboard.
+
+To copy text with the mouse, **hold `⌥ Option` and drag** in iTerm2. This does a
+native terminal selection (bypassing tmux and Neovim mouse capture) and, since
+iTerm2's "copy on select" is on by default, it lands straight in the macOS
+clipboard — no `⌘C` needed. Use `⌥⌘` + drag for a rectangular selection to skip
+the line-number gutter.
+
+Keeping tmux `mouse on` preserves scroll and click-to-position inside Neovim.
+
 ## Key Mappings
 
 Leader key is `,`.
@@ -95,6 +108,7 @@ These are intentional so deletes don’t overwrite what you yanked (especially w
 | n | `<leader>gc` | Git commits |
 | n | `<leader>gfc` | Git commits (current file) |
 | n | `<leader>gbr` | Git branches |
+| n | `<leader>gd` | Changed files (git status) with diff preview |
 | n | `<leader>hm` | Harpoon marks (Telescope) |
 
 ### Git
@@ -113,10 +127,14 @@ These are intentional so deletes don’t overwrite what you yanked (especially w
 | n | `<leader>hR` | Reset buffer |
 | n | `<leader>hu` | Undo stage hunk |
 | n | `<leader>hp` | Preview hunk |
+| n | `<leader>ht` | Toggle line highlight (red/green diff) |
+| n | `<leader>hw` | Toggle word diff (intra-line) |
+| n | `<leader>hx` | Toggle deleted lines (inline) |
+| n | `<leader>hv` | Toggle review view (line + word diff + deleted) |
 | n | `<leader>hb` | Blame line (full) |
 | n | `<leader>hB` | Toggle line blame |
-| n | `<leader>hd` | Diff this |
-| n | `<leader>hD` | Diff this `~` |
+| n | `<leader>hd` | Diff this — split before/after vs index (`:q` to close, `]c`/`[c` to jump) |
+| n | `<leader>hD` | Diff this vs previous revision (`HEAD~`) |
 | o/x | `ih` | Select hunk text object |
 
 ### LSP (buffer-local on attach)

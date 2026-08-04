@@ -78,6 +78,7 @@ keymap.set("n", "<leader>b", ":NvimTreeToggle<CR>") -- toggle file explorer
 keymap.set("n", "<leader>gc", "<cmd>Telescope git_commits<cr>") -- list all git commits (use <cr> to checkout) ["gc" for git commits]
 keymap.set("n", "<leader>gfc", "<cmd>Telescope git_bcommits<cr>") -- list git commits for current file/buffer (use <cr> to checkout) ["gfc" for git file commits]
 keymap.set("n", "<leader>gbr", "<cmd>Telescope git_branches<cr>") -- list git branches (use <cr> to checkout) ["gb" for git branch]
+keymap.set("n", "<leader>gd", "<cmd>Telescope git_status<cr>") -- list changed/staged files with diff preview (use <cr> to open) ["gd" for git diff]
 
 -- git blame
 keymap.set("n", "<leader>gb", ":GitBlameToggle<CR>")

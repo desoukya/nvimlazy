@@ -30,6 +30,17 @@ return {
 
       map("n", "<leader>hp", gs.preview_hunk, "Preview hunk")
 
+      -- Review mode: highlight changed lines red/green in the buffer
+      map("n", "<leader>ht", gs.toggle_linehl, "Toggle line highlight (diff)")
+      map("n", "<leader>hw", gs.toggle_word_diff, "Toggle word diff")
+      map("n", "<leader>hx", gs.toggle_deleted, "Toggle deleted lines (inline)")
+      -- Review view: line highlight + word diff + inline deleted, all at once
+      map("n", "<leader>hv", function()
+        gs.toggle_linehl()
+        gs.toggle_word_diff()
+        gs.toggle_deleted()
+      end, "Toggle review view (line + word diff + deleted)")
+
       map("n", "<leader>hb", function()
         gs.blame_line({ full = true })
       end, "Blame line")
@@ -44,4 +55,24 @@ return {
       map({ "o", "x" }, "ih", ":<C-U>Gitsigns select_hunk<CR>", "Gitsigns select hunk")
     end,
   },
+  config = function(_, opts)
+    require("gitsigns").setup(opts)
+
+    -- More pronounced red/green diff highlights (used by <leader>ht / <leader>hw / <leader>hx)
+    local function set_diff_hl()
+      -- whole-line highlights (linehl)
+      vim.api.nvim_set_hl(0, "GitSignsAddLn", { bg = "#163f24" })
+      vim.api.nvim_set_hl(0, "GitSignsChangeLn", { bg = "#2c3860" })
+      vim.api.nvim_set_hl(0, "GitSignsDeleteLn", { bg = "#4f2027" })
+      -- intra-line highlights (word_diff)
+      vim.api.nvim_set_hl(0, "GitSignsAddInline", { bg = "#245e3c" })
+      vim.api.nvim_set_hl(0, "GitSignsChangeInline", { bg = "#3a4880" })
+      vim.api.nvim_set_hl(0, "GitSignsDeleteInline", { bg = "#782c34" })
+      -- deleted lines shown inline (toggle_deleted)
+      vim.api.nvim_set_hl(0, "GitSignsDeleteVirtLn", { bg = "#4f2027" })
+    end
+
+    set_diff_hl()
+    vim.api.nvim_create_autocmd("ColorScheme", { callback = set_diff_hl })
+  end,
 }
