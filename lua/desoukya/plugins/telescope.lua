@@ -1,6 +1,9 @@
 return {
   "nvim-telescope/telescope.nvim",
-  branch = "0.1.x",
+  -- master (not 0.1.x): 0.1.x is frozen and uses the removed nvim-treesitter
+  -- `configs`/`parsers` API, which errors under treesitter `main`. master uses
+  -- core vim.treesitter for preview highlighting.
+  branch = "master",
   dependencies = {
     "nvim-lua/plenary.nvim",
     {
