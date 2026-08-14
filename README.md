@@ -7,7 +7,7 @@ Personal Neovim configuration (lazy.nvim-based).
 Install the external tools this config expects to exist on your system:
 
 ```sh
-brew install glow ripgrep fd node python
+brew install glow ripgrep fd node python hurl tree-sitter-cli
 ```
 
 Optional (only if you use C# / OmniSharp):
@@ -23,6 +23,8 @@ Notes:
 3. `node` is used by multiple LSP/format/lint tools (via Mason), and by some JS/TS language servers.
 4. `python` is used by Python formatters/linters (via Mason).
 5. `glow` powers Markdown preview.
+6. `hurl` powers the HTTP client (`hurl.nvim`).
+7. `tree-sitter-cli` is required by nvim-treesitter (`main` branch) to compile parsers. The DB client (`vim-dadbod-ui`) uses whatever DB CLIs you have installed (`psql`, `sqlite3`, `redis-cli`, …).
 
 ## Markdown Preview
 
@@ -43,6 +45,43 @@ clipboard — no `⌘C` needed. Use `⌥⌘` + drag for a rectangular selection 
 the line-number gutter.
 
 Keeping tmux `mouse on` preserves scroll and click-to-position inside Neovim.
+
+## HTTP Requests (hurl.nvim)
+
+Write requests in a `.hurl` file and run them; responses open in a popup.
+
+1. Create a `*.hurl` file (e.g. `GET https://httpbin.org/get`).
+2. `<leader>ra` runs the request under the cursor; `<leader>rA` runs all requests
+   in the file (this is what chains captures like a login token); select lines +
+   `<leader>rr` runs just those.
+3. `<leader>rp` opens a Telescope picker of the file's requests (labeled by their
+   preceding `# comment`) — pick one to jump to it and run it.
+4. `<leader>rl` reopens the last response.
+
+**Environments:** keep per-env files next to (or above) your `.hurl` files, e.g.
+`kawader-stg.env` and `scale-backend-local.env`, each defining the same variable
+names (`baseUrl`, `proxy`, credentials, …). Reference them in requests as
+`{{baseUrl}}` etc. Switch with `<leader>re` — a Telescope picker of every `*.env`
+found from the file's directory up to the git (or filesystem) root.
+
+**Captured variables** (e.g. a token from `[Captures]`) are saved as globals for
+the session; view/edit them with `<leader>rv`, or set one with `<leader>rs`.
+
+## Database (vim-dadbod-ui)
+
+A lightweight, buffer-based DB client.
+
+1. `<leader>db` toggles the DB UI drawer.
+2. First time, `:DBUIAddConnection` and paste a connection URL — it **must** have
+   a scheme, e.g. `postgres://user:pass@localhost:5432/mydb` or
+   `sqlite:///abs/path.db`. It's saved for next time.
+3. Open a table or a `New query` buffer, write SQL, then:
+   - `<leader>S` runs the whole buffer; `<leader>rq` runs only the query under the
+     cursor (its current blank-line-delimited paragraph); `:w` also runs the buffer.
+
+SQL autocomplete flows through nvim-cmp. Note each run is a fresh session, so a
+`SET`/`current_setting` pair must be sent together (run the whole buffer, or keep
+the `SET` in the same paragraph as the query).
 
 ## Key Mappings
 
@@ -200,6 +239,28 @@ These are intentional so deletes don’t overwrite what you yanked (especially w
 | Mode | Key | Action |
 | --- | --- | --- |
 | n | `<leader>md` | Markdown preview (Glow) |
+
+### HTTP Requests (hurl.nvim, in `.hurl` files)
+
+| Mode | Key | Action |
+| --- | --- | --- |
+| n | `<leader>ra` | Run request at cursor |
+| n | `<leader>rA` | Run all requests in file |
+| v | `<leader>rr` | Run selected requests |
+| n | `<leader>rp` | Pick & run a request (Telescope) |
+| n | `<leader>re` | Select env file (Telescope) |
+| n | `<leader>rl` | Show last response |
+| n | `<leader>rt` | Toggle popup/split view |
+| n | `<leader>rv` | Manage variables (view/edit/delete) |
+| n | `<leader>rs` | Set a variable (type: `name value`) |
+
+### Database (vim-dadbod-ui)
+
+| Mode | Key | Action |
+| --- | --- | --- |
+| n | `<leader>db` | Toggle DB UI drawer |
+| n/v | `<leader>S` | Execute query (whole buffer / selection) |
+| n | `<leader>rq` | Run query under cursor (in a DB query buffer) |
 
 ### Misc
 

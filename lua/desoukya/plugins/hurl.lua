@@ -2,27 +2,60 @@
 -- picker (routed through dressing.nvim's vim.ui.select), then activate it
 -- with :HurlSetEnvFile so the next run uses it.
 local function pick_hurl_env()
-  local dir = vim.fn.expand("%:p:h")
-  if dir == "" then
-    dir = vim.fn.getcwd()
+  local start = vim.fn.expand("%:p:h")
+  if start == "" then
+    start = vim.fn.getcwd()
   end
-  local files = vim.fn.glob(dir .. "/*.env", false, true)
+
+  -- Collect *.env from the buffer's dir up through its ancestors. Stop at the
+  -- git root if there is one, otherwise walk to the filesystem root — so env
+  -- files kept at the project root are found from any subdirectory, git or not.
+  local git_root = vim.fs.root(start, ".git")
+  local files, seen = {}, {}
+  local cur = start
+  while true do
+    for _, f in ipairs(vim.fn.glob(cur .. "/*.env", false, true)) do
+      if not seen[f] then
+        seen[f] = true
+        files[#files + 1] = f
+      end
+    end
+    if git_root and cur == git_root then
+      break
+    end
+    local parent = vim.fn.fnamemodify(cur, ":h")
+    if parent == cur then
+      break
+    end
+    cur = parent
+  end
+
   if #files == 0 then
-    vim.notify("Hurl: no .env files found in " .. dir, vim.log.levels.WARN)
+    vim.notify("Hurl: no .env files found above " .. start, vim.log.levels.WARN)
     return
   end
+
   vim.ui.select(files, {
     prompt = "Hurl env file",
     format_item = function(f)
-      return vim.fn.fnamemodify(f, ":t")
+      return vim.fn.fnamemodify(f, ":~:.") -- show a path so same-named files stay distinct
     end,
   }, function(choice)
     if not choice then
       return
     end
     local name = vim.fn.fnamemodify(choice, ":t")
-    vim.cmd("HurlSetEnvFile " .. name)
-    vim.notify("Hurl env → " .. name)
+    -- Point hurl.nvim directly at the chosen file's absolute path. hurl_runner
+    -- injects `--variables-file <path>` for each entry find_env_files_in_folders
+    -- returns (gated on filereadable), so overriding it makes the picked file
+    -- work regardless of where it lives or whether we're in a git repo.
+    if _HURL_GLOBAL_CONFIG then
+      _HURL_GLOBAL_CONFIG.env_file = { name }
+      _HURL_GLOBAL_CONFIG.find_env_files_in_folders = function()
+        return { { path = choice, dest = vim.fn.stdpath("cache") .. "/" .. name } }
+      end
+    end
+    vim.notify("Hurl env → " .. vim.fn.fnamemodify(choice, ":~:."))
   end)
 end
 
