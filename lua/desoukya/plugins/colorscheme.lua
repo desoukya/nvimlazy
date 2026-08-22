@@ -2,7 +2,8 @@ return {
   "folke/tokyonight.nvim",
   priority = 1000,
   config = function()
-    local transparent = false -- set to true if you would like to enable transparency
+    -- https://github.com/JoshM-Yoru/dotfiles/blob/main/mad-dog-jones-nightfall.jpg
+    local transparent = true
 
     local bg = "#011628"
     local bg_dark = "#011423"
