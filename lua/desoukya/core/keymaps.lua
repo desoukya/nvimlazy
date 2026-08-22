@@ -16,6 +16,10 @@ local keymap = vim.keymap -- for conciseness
 keymap.set("n", "<leader>fe", ":set foldenable<CR>") -- enable folding
 keymap.set("n", "<leader>fd", ":set nofoldenable<CR>") -- enable folding
 
+-- open/close all folds in the file
+keymap.set("n", "zf", "zM", { desc = "Close all folds (file)" })
+keymap.set("n", "zF", "zR", { desc = "Open all folds (file)" })
+
 -- use jk to exit insert mode
 keymap.set("i", "jk", "<ESC>")
 

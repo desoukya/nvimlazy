@@ -19,6 +19,7 @@ local PARSERS = {
   "html",
   "css",
   "json",
+  "python",
   "hurl",
 }
 

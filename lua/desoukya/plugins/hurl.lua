@@ -100,6 +100,55 @@ local function pick_hurl_request()
   end)
 end
 
+-- Open the last Hurl response in the browser, which has a real bidirectional
+-- text engine — so RTL/Arabic values render correctly. Neither Neovim nor a
+-- terminal can reorder bidi text, so this is the reliable way to *read* them.
+local function open_last_response_in_browser()
+  local ok, history = pcall(require, "hurl.history")
+  local resp = ok and history.get_last_response and history.get_last_response()
+  if not resp or not resp.body then
+    vim.notify("Hurl: no response yet — run a request first", vim.log.levels.WARN)
+    return
+  end
+  local body = resp.body
+  local pretty = vim.fn.system({ "jq", "." }, body) -- pretty-print if it's JSON
+  if vim.v.shell_error == 0 and pretty ~= "" then
+    body = pretty
+  end
+  body = body:gsub("&", "&amp;"):gsub("<", "&lt;")
+  local lines = {
+    '<!doctype html><meta charset="utf-8">',
+    "<style>body{font:14px/1.6 ui-monospace,Menlo,monospace;margin:1.5rem}</style>",
+    '<pre dir="auto">', -- dir="auto" lets the browser bidi-order each line
+  }
+  vim.list_extend(lines, vim.split(body, "\n"))
+  lines[#lines + 1] = "</pre>"
+  local tmp = vim.fn.tempname() .. ".html"
+  vim.fn.writefile(lines, tmp)
+  vim.ui.open(tmp)
+end
+
+-- Report the byte size of the last Hurl response body (works even when the
+-- server sends no Content-Length header).
+local function show_last_response_size()
+  local ok, history = pcall(require, "hurl.history")
+  local resp = ok and history.get_last_response and history.get_last_response()
+  if not resp or not resp.body then
+    vim.notify("Hurl: no response yet — run a request first", vim.log.levels.WARN)
+    return
+  end
+  local bytes = #resp.body
+  local human
+  if bytes < 1024 then
+    human = bytes .. " B"
+  elseif bytes < 1024 * 1024 then
+    human = string.format("%.1f KB", bytes / 1024)
+  else
+    human = string.format("%.2f MB", bytes / (1024 * 1024))
+  end
+  vim.notify(string.format("Hurl: response body %s (%d bytes)", human, bytes))
+end
+
 return {
   "jellydn/hurl.nvim",
   ft = "hurl", -- load when a .hurl file is opened
@@ -110,13 +159,15 @@ return {
   opts = {
     debug = false,
     show_notification = false,
-    mode = "popup", -- show response in a floating popup ("split" for a side window)
+    mode = "split", -- show response in a side split ("popup" for a floating window)
   },
   keys = {
     { "<leader>ra", "<cmd>HurlRunnerAt<cr>", desc = "Hurl: run request at cursor" },
     { "<leader>rA", "<cmd>HurlRunner<cr>", desc = "Hurl: run all requests in file" },
     { "<leader>rr", ":HurlRunner<cr>", desc = "Hurl: run selected requests", mode = "v" },
     { "<leader>rl", "<cmd>HurlShowLastResponse<cr>", desc = "Hurl: show last response" },
+    { "<leader>ro", open_last_response_in_browser, desc = "Hurl: open last response in browser (bidi/Arabic)" },
+    { "<leader>rz", show_last_response_size, desc = "Hurl: show last response size" },
     { "<leader>re", pick_hurl_env, desc = "Hurl: select env file" },
     { "<leader>rp", pick_hurl_request, desc = "Hurl: pick & run a request" },
     { "<leader>rt", "<cmd>HurlToggleMode<cr>", desc = "Hurl: toggle split/popup view" },
