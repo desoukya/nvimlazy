@@ -25,6 +25,8 @@ Notes:
 5. `glow` powers Markdown preview.
 6. `hurl` powers the HTTP client (`hurl.nvim`).
 7. `tree-sitter-cli` is required by nvim-treesitter (`main` branch) to compile parsers. The DB client (`vim-dadbod-ui`) uses whatever DB CLIs you have installed (`psql`, `sqlite3`, `redis-cli`, …).
+8. Python debugging (nvim-dap) uses `debugpy` from a dedicated venv:
+   `python3 -m venv ~/.virtualenvs/debugpy && ~/.virtualenvs/debugpy/bin/python -m pip install debugpy`.
 
 ## Markdown Preview
 
@@ -48,7 +50,8 @@ Keeping tmux `mouse on` preserves scroll and click-to-position inside Neovim.
 
 ## HTTP Requests (hurl.nvim)
 
-Write requests in a `.hurl` file and run them; responses open in a popup.
+Write requests in a `.hurl` file and run them; responses open in a split
+(`<leader>rt` toggles split/popup).
 
 1. Create a `*.hurl` file (e.g. `GET https://httpbin.org/get`).
 2. `<leader>ra` runs the request under the cursor; `<leader>rA` runs all requests
@@ -56,7 +59,12 @@ Write requests in a `.hurl` file and run them; responses open in a popup.
    `<leader>rr` runs just those.
 3. `<leader>rp` opens a Telescope picker of the file's requests (labeled by their
    preceding `# comment`) — pick one to jump to it and run it.
-4. `<leader>rl` reopens the last response.
+4. `<leader>rl` reopens the last response; `<leader>rz` reports its byte size.
+
+**Reading RTL/Arabic responses:** Neovim (and the terminal) can't reorder
+bidirectional text, so Arabic renders reversed in the response buffer. The bytes
+are correct — assert on them in the `.hurl` file, or press `<leader>ro` to open
+the last response in the browser, which renders bidi correctly.
 
 **Environments:** keep per-env files next to (or above) your `.hurl` files, e.g.
 `kawader-stg.env` and `scale-backend-local.env`, each defining the same variable
@@ -83,6 +91,26 @@ SQL autocomplete flows through nvim-cmp. Note each run is a fresh session, so a
 `SET`/`current_setting` pair must be sent together (run the whole buffer, or keep
 the `SET` in the same paragraph as the query).
 
+## Debugging (nvim-dap)
+
+nvim-dap + dap-ui + dap-virtual-text (values shown inline) + dap-python. See the
+`debugpy` venv note in Prerequisites.
+
+1. Put the cursor on a line and press `<F9>` (or `<leader>B`) to set a breakpoint.
+2. `<F5>` starts/continues — pick a config (e.g. "Launch file"). The UI opens
+   automatically; step with `<F10>`/`<F11>`/`<F12>`, inspect with `<leader>E`.
+3. **Debug a running server** (e.g. FastAPI): start it under debugpy, then `<F5>`
+   → pick the **attach** config to connect. Breakpoints fire when you hit the
+   endpoint. A ready-made "Attach to Kawader AI (:5678)" config lives in `dap.lua`.
+4. **Debug a test:** cursor in a test, `<leader>T` (method) / `<leader>C` (class).
+
+## JWT
+
+`:JwtDecode` (or `<leader>jd`) decodes the JWT under the cursor — header, payload,
+and `iat`/`nbf`/`exp` as readable local time with an `(EXPIRED)` flag. Works on a
+bare token or one embedded in `key=…`, quotes, or a `Bearer …` header;
+`:JwtDecode <token>` decodes a pasted one.
+
 ## Key Mappings
 
 Leader key is `,`.
@@ -102,6 +130,8 @@ Leader key is `,`.
 | n | `<leader>nb` | New scratch buffer (no file) |
 | n | `<leader>fe` | Enable folding |
 | n | `<leader>fd` | Disable folding |
+| n | `zf` | Close all folds (file) |
+| n | `zF` | Open all folds (file) |
 | n | `<leader>+` | Increment number |
 | n | `<leader>-` | Decrement number |
 | n | `<leader>sv` | Split window vertical |
@@ -142,7 +172,8 @@ These are intentional so deletes don’t overwrite what you yanked (especially w
 | n | `<leader>ff` | Find files |
 | n | `<leader>fr` | Recent files |
 | n | `<leader>fs` | Live grep |
-| n | `<leader>fc` | Grep string under cursor |
+| n | `<leader>fc` | Live grep word under cursor (seeded, refinable) |
+| x | `<leader>fc` | Live grep the visual selection |
 | n | `<leader>ft` | TODOs (Telescope) |
 | n | `<leader>gc` | Git commits |
 | n | `<leader>gfc` | Git commits (current file) |
@@ -250,7 +281,9 @@ These are intentional so deletes don’t overwrite what you yanked (especially w
 | n | `<leader>rp` | Pick & run a request (Telescope) |
 | n | `<leader>re` | Select env file (Telescope) |
 | n | `<leader>rl` | Show last response |
-| n | `<leader>rt` | Toggle popup/split view |
+| n | `<leader>ro` | Open last response in browser (bidi/Arabic) |
+| n | `<leader>rz` | Show last response size |
+| n | `<leader>rt` | Toggle split/popup view |
 | n | `<leader>rv` | Manage variables (view/edit/delete) |
 | n | `<leader>rs` | Set a variable (type: `name value`) |
 
@@ -262,6 +295,19 @@ These are intentional so deletes don’t overwrite what you yanked (especially w
 | n/v | `<leader>S` | Execute query (whole buffer / selection) |
 | n | `<leader>rq` | Run query under cursor (in a DB query buffer) |
 
+### Debugging (nvim-dap)
+
+| Mode | Key | Action |
+| --- | --- | --- |
+| n | `<F5>` | Start / continue |
+| n | `<F9>` / `<leader>B` | Toggle breakpoint |
+| n | `<F10>` / `<F11>` / `<F12>` | Step over / into / out |
+| n | `<F6>` | Toggle DAP UI |
+| n/v | `<leader>E` | Evaluate expression |
+| n | `<leader>T` | Debug nearest test (Python) |
+| n | `<leader>C` | Debug test class (Python) |
+| n | `<leader>Q` | Terminate session |
+
 ### Misc
 
 | Mode | Key | Action |
@@ -269,3 +315,4 @@ These are intentional so deletes don’t overwrite what you yanked (especially w
 | n | `<leader>l` | Open Lazy plugin manager |
 | v | `<leader>sl` | Sort selected lines |
 | n | `<leader>si` | Typescript organize imports |
+| n | `<leader>jd` | Decode JWT under cursor (`:JwtDecode`) |
