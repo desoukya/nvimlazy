@@ -91,6 +91,15 @@ SQL autocomplete flows through nvim-cmp. Note each run is a fresh session, so a
 `SET`/`current_setting` pair must be sent together (run the whole buffer, or keep
 the `SET` in the same paragraph as the query).
 
+**Saved queries** live per-connection under `~/.local/share/db_ui/<connection-name>/`:
+
+- Save the current query buffer with `<Leader>W` — it prompts for a name and then
+  appears under that connection's **Saved queries** (and persists across sessions).
+- Or drop an existing `.sql` file into that folder (`mkdir -p` it if needed; the
+  subfolder name must match the connection's name), then press `R` in the drawer
+  to refresh.
+- Open one from **Saved queries** with `<CR>`, then run it with `<leader>S` / `<leader>rq`.
+
 ## Debugging (nvim-dap)
 
 nvim-dap + dap-ui + dap-virtual-text (values shown inline) + dap-python. See the
@@ -294,6 +303,7 @@ These are intentional so deletes don’t overwrite what you yanked (especially w
 | n | `<leader>db` | Toggle DB UI drawer |
 | n/v | `<leader>S` | Execute query (whole buffer / selection) |
 | n | `<leader>rq` | Run query under cursor (in a DB query buffer) |
+| n | `<leader>W` | Save current query (→ Saved queries) |
 
 ### Debugging (nvim-dap)
 
@@ -316,3 +326,4 @@ These are intentional so deletes don’t overwrite what you yanked (especially w
 | v | `<leader>sl` | Sort selected lines |
 | n | `<leader>si` | Typescript organize imports |
 | n | `<leader>jd` | Decode JWT under cursor (`:JwtDecode`) |
+| n | `<leader>rw` | Replace all of word under cursor, file-wide (prompts for new word) |

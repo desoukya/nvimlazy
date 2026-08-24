@@ -20,6 +20,23 @@ keymap.set("n", "<leader>fd", ":set nofoldenable<CR>") -- enable folding
 keymap.set("n", "zf", "zM", { desc = "Close all folds (file)" })
 keymap.set("n", "zF", "zR", { desc = "Open all folds (file)" })
 
+-- replace all whole-word instances of the word under the cursor in this file;
+-- opens a prompt pre-filled with the word so you just edit it to the new one
+keymap.set("n", "<leader>rw", function()
+  local word = vim.fn.expand("<cword>")
+  if word == "" then
+    return
+  end
+  vim.ui.input({ prompt = "Replace « " .. word .. " » with: ", default = word }, function(new)
+    if not new or new == "" or new == word then
+      return
+    end
+    local pat = [[\<]] .. vim.fn.escape(word, [[/\]]) .. [[\>]]
+    local rep = vim.fn.escape(new, [[/\&~]])
+    vim.cmd(("%%s/%s/%s/g"):format(pat, rep))
+  end)
+end, { desc = "Replace all of word under cursor (file)" })
+
 -- use jk to exit insert mode
 keymap.set("i", "jk", "<ESC>")
 
