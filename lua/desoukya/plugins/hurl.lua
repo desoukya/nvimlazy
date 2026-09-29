@@ -1,6 +1,75 @@
+-- Resolve an env-file NAME to an absolute path by walking from `start` up to the
+-- git root (or the filesystem root).
+local function resolve_env_file(name, start)
+  local git_root = vim.fs.root(start, ".git")
+  local cur = start
+  while true do
+    local candidate = cur .. "/" .. name
+    if vim.fn.filereadable(candidate) == 1 then
+      return candidate
+    end
+    if git_root and cur == git_root then
+      break
+    end
+    local parent = vim.fn.fnamemodify(cur, ":h")
+    if parent == cur then
+      break
+    end
+    cur = parent
+  end
+  return nil
+end
+
+-- Point hurl.nvim at the env file at `path` (absolute) for subsequent runs.
+-- hurl_runner injects `--variables-file <path>` for each entry that
+-- find_env_files_in_folders returns (gated on filereadable), so overriding it
+-- makes the file work regardless of where it lives or git status.
+local function use_env_file(path)
+  if not _HURL_GLOBAL_CONFIG then
+    return
+  end
+  local name = vim.fn.fnamemodify(path, ":t")
+  _HURL_GLOBAL_CONFIG.env_file = { name }
+  _HURL_GLOBAL_CONFIG.find_env_files_in_folders = function()
+    return { { path = path, dest = vim.fn.stdpath("cache") .. "/" .. name } }
+  end
+end
+
+-- Honor a `# @env <file>` directive in the first lines of a .hurl file, so a
+-- file can pin which env ALL its requests use (no manual <leader>re each session).
+local function apply_env_directive(args)
+  local buf = (args and args.buf) or 0
+  if vim.bo[buf].filetype ~= "hurl" then
+    return
+  end
+  local name
+  for _, line in ipairs(vim.api.nvim_buf_get_lines(buf, 0, 30, false)) do
+    name = line:match("^%s*#%s*@env%s+(%S+)")
+    if name then
+      break
+    end
+  end
+  if not name then
+    return
+  end
+  local path = resolve_env_file(name, vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":p:h"))
+  if path then
+    use_env_file(path)
+  else
+    vim.notify("Hurl: @env file not found: " .. name, vim.log.levels.WARN)
+  end
+end
+
+-- Stop any in-flight hurl request. hurl.nvim runs the CLI via jobstart but does
+-- not expose the job id, so kill the hurl process(es) directly.
+local function stop_hurl()
+  vim.fn.jobstart({ "pkill", "-x", "hurl" })
+  vim.notify("Hurl: stopped in-flight request")
+end
+
 -- Pick a Hurl env file (*.env next to the current .hurl) via a Telescope
 -- picker (routed through dressing.nvim's vim.ui.select), then activate it
--- with :HurlSetEnvFile so the next run uses it.
+-- for subsequent runs.
 local function pick_hurl_env()
   local start = vim.fn.expand("%:p:h")
   if start == "" then
@@ -44,17 +113,7 @@ local function pick_hurl_env()
     if not choice then
       return
     end
-    local name = vim.fn.fnamemodify(choice, ":t")
-    -- Point hurl.nvim directly at the chosen file's absolute path. hurl_runner
-    -- injects `--variables-file <path>` for each entry find_env_files_in_folders
-    -- returns (gated on filereadable), so overriding it makes the picked file
-    -- work regardless of where it lives or whether we're in a git repo.
-    if _HURL_GLOBAL_CONFIG then
-      _HURL_GLOBAL_CONFIG.env_file = { name }
-      _HURL_GLOBAL_CONFIG.find_env_files_in_folders = function()
-        return { { path = choice, dest = vim.fn.stdpath("cache") .. "/" .. name } }
-      end
-    end
+    use_env_file(choice)
     vim.notify("Hurl env → " .. vim.fn.fnamemodify(choice, ":~:."))
   end)
 end
@@ -161,6 +220,16 @@ return {
     show_notification = false,
     mode = "split", -- show response in a side split ("popup" for a floating window)
   },
+  config = function(_, opts)
+    require("hurl").setup(opts)
+    -- `# @env <file>` at the top of a .hurl file pins the env for all its
+    -- requests; re-applied whenever you enter that buffer.
+    vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
+      pattern = "*.hurl",
+      callback = apply_env_directive,
+    })
+    apply_env_directive({ buf = vim.api.nvim_get_current_buf() })
+  end,
   keys = {
     { "<leader>ra", "<cmd>HurlRunnerAt<cr>", desc = "Hurl: run request at cursor" },
     { "<leader>rA", "<cmd>HurlRunner<cr>", desc = "Hurl: run all requests in file" },
@@ -172,6 +241,6 @@ return {
     { "<leader>rp", pick_hurl_request, desc = "Hurl: pick & run a request" },
     { "<leader>rt", "<cmd>HurlToggleMode<cr>", desc = "Hurl: toggle split/popup view" },
     { "<leader>rv", "<cmd>HurlManageVariable<cr>", desc = "Hurl: manage variables (view/edit/delete)" },
-    { "<leader>rs", ":HurlSetVariable ", desc = "Hurl: set a variable (type: name value)" },
+    { "<leader>rs", stop_hurl, desc = "Hurl: stop (kill) in-flight request" },
   },
 }

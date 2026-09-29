@@ -4,6 +4,11 @@ return {
     version = "*", -- recommended, use latest release instead of latest commit
     lazy = true,
     ft = "markdown",
+    -- Only load when the vault exists; otherwise obsidian throws
+    -- FileNotFoundError on ANY markdown buffer (e.g. a Hurl response).
+    cond = function()
+      return vim.fn.isdirectory(vim.fn.expand("~/dev/vault")) == 1
+    end,
     dependencies = {
       -- Required.
       "nvim-lua/plenary.nvim",
@@ -29,7 +34,9 @@ return {
   -- pretty markdown
   {
     "MeanderingProgrammer/render-markdown.nvim",
-    enable = false,
+    enabled = false, -- (was `enable = false`, a typo — lazy's key is `enabled`).
+    -- It links code blocks to ColorColumn (a solid bg), which showed as a black
+    -- block behind Hurl's ```json responses once treesitter `main` let it render.
     opts = {},
     dependencies = { "nvim-treesitter/nvim-treesitter", "echasnovski/mini.nvim" },
   },
