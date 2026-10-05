@@ -27,13 +27,23 @@ Notes:
 7. `tree-sitter-cli` is required by nvim-treesitter (`main` branch) to compile parsers. The DB client (`vim-dadbod-ui`) uses whatever DB CLIs you have installed (`psql`, `sqlite3`, `redis-cli`, …).
 8. Python debugging (nvim-dap) uses `debugpy` from a dedicated venv:
    `python3 -m venv ~/.virtualenvs/debugpy && ~/.virtualenvs/debugpy/bin/python -m pip install debugpy`.
+9. Jupyter notebooks (`ipynb.nvim`) need `jupyter_client` + `ipykernel` in the
+   kernel's Python — a project venv, or a dedicated one:
+   `python3 -m venv ~/.virtualenvs/jupyter && ~/.virtualenvs/jupyter/bin/python -m pip install jupyter_client ipykernel`.
+   Its treesitter parser is compiled by a `build` step via the `tree-sitter` CLI.
+10. `MarkdownPreview` (browser/mermaid) builds a Node app on install (`node`/`npm`).
 
 ## Markdown Preview
 
 In a Markdown buffer:
 
-1. Press `<leader>md` to open preview (`:Glow`).
-2. Press `q` or `<Esc>` to close the preview.
+- **`<leader>md`** — quick terminal preview (`:Glow`); `q`/`<Esc>` to close.
+- **`<leader>mp`** — live preview in the **browser** (markdown-preview.nvim), which
+  renders **mermaid** diagrams. Put the diagram in a ` ```mermaid ` fenced block;
+  the preview updates as you edit. Toggle off with `<leader>mp` or `:MarkdownPreviewStop`.
+
+(render-markdown.nvim is intentionally disabled — it backgrounds code blocks via
+`ColorColumn`, which showed as a black block over transparent buffers.)
 
 ## Mouse Selection (tmux + iTerm2)
 
@@ -119,6 +129,26 @@ nvim-dap + dap-ui + dap-virtual-text (values shown inline) + dap-python. See the
 and `iat`/`nbf`/`exp` as readable local time with an `(EXPIRED)` flag. Works on a
 bare token or one embedded in `key=…`, quotes, or a `Bearer …` header;
 `:JwtDecode <token>` decodes a pasted one.
+
+## Jupyter Notebooks (ipynb.nvim)
+
+Open a `.ipynb` file and it renders as a notebook — bordered cell blocks, `[N]`
+execution counts, and markdown/code/raw cells, with outputs inline.
+
+1. `<leader>ks` (or `:NotebookKernelStart`) starts a kernel. It auto-detects a
+   project venv (`.venv`/`venv` walking up), else system Python — or pass one:
+   `:NotebookKernelStart ~/.virtualenvs/jupyter/bin/python`. That Python needs
+   `jupyter_client` + `ipykernel`.
+2. Run a cell with `<leader>kx` (execute & move to next) or `<leader>kX` (execute,
+   stay); text output shows inline, `<leader>ko` opens full output in a float.
+
+Notes:
+- **Alpha** plugin — expect rough edges.
+- **Inline plots/images** need a Kitty-protocol terminal (kitty/Ghostty) +
+  `snacks.nvim` (commented in `ipynb.lua`). On iTerm2 they show
+  `[Image failed to load]`; cell blocks and text outputs work fine.
+- Its `ipynb` treesitter parser is compiled by a lazy `build` step (the plugin's
+  own auto-install targets the old nvim-treesitter API, which `main` dropped).
 
 ## Key Mappings
 
@@ -278,7 +308,8 @@ These are intentional so deletes don’t overwrite what you yanked (especially w
 
 | Mode | Key | Action |
 | --- | --- | --- |
-| n | `<leader>md` | Markdown preview (Glow) |
+| n | `<leader>md` | Markdown preview (Glow, terminal) |
+| n | `<leader>mp` | Markdown preview (browser, mermaid) |
 
 ### HTTP Requests (hurl.nvim, in `.hurl` files)
 
@@ -317,6 +348,21 @@ These are intentional so deletes don’t overwrite what you yanked (especially w
 | n | `<leader>T` | Debug nearest test (Python) |
 | n | `<leader>C` | Debug test class (Python) |
 | n | `<leader>Q` | Terminate session |
+
+### Jupyter Notebooks (ipynb.nvim, in `.ipynb` files)
+
+| Mode | Key | Action |
+| --- | --- | --- |
+| n | `<leader>ks` | Start kernel (`<leader>ki` interrupt · `<leader>k0` restart · `<leader>kS` shutdown · `<leader>kn` info) |
+| n | `<leader>kx` | Execute cell & move to next |
+| n | `<leader>kX` | Execute cell (stay) |
+| n | `<leader>ko` | Open output in float |
+| n | `<leader>kc` / `<leader>kC` | Clear cell / all outputs |
+| n | `<leader>kj` | Jump to cell (picker) |
+| n | `<leader>ka` / `<leader>kb` | Add cell above / below |
+| n | `<leader>ky` / `<leader>km` / `<leader>kr` | Make cell code / markdown / raw |
+| n | `<leader>kf` | Toggle cell fold |
+| n | `<leader>kh` / `<leader>kv` | Inspect variable at cursor / all cell variables |
 
 ### Misc
 
